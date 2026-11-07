@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>식품구성 자전거 학습지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFF8EC; --card:#FFFFFF; --ink:#2E2A26; --muted:#7A6F64;
+    --accent:#F2994A; --accent-d:#D9772A; --green:#3FA46A; --red:#E05555; --line:#F0E2CC;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Gowun Dodum',sans-serif;font-size:17px;line-height:1.6}
+  .wrap{max-width:760px;margin:0 auto;padding:24px 16px 60px}
+  header{text-align:center;margin-bottom:20px}
+  header h1{font-family:'Jua',sans-serif;font-size:34px;margin:8px 0 4px;color:var(--accent-d)}
+  header p{margin:0;color:var(--muted)}
+  .bike{display:block;margin:10px auto 0;max-width:320px;width:100%}
+  .section-title{font-family:'Jua',sans-serif;font-size:22px;margin:30px 0 10px;display:flex;align-items:center;gap:8px}
+  .section-title span{background:var(--accent);color:#fff;border-radius:20px;padding:2px 12px;font-size:15px}
+  .q{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:14px;transition:border-color .2s}
+  .q h3{font-family:'Jua',sans-serif;font-weight:400;font-size:19px;margin:0 0 4px}
+  .q .hint{font-size:14px;color:var(--muted);margin-bottom:10px}
+  .menu{background:#FFF3E0;border-radius:10px;padding:8px 12px;margin:6px 0 10px;font-size:16px}
+  .opts{display:grid;gap:8px}
+  .opts label{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--line);border-radius:12px;cursor:pointer;transition:all .15s}
+  .opts label:hover{border-color:var(--accent)}
+  .opts input{width:20px;height:20px;accent-color:var(--accent);flex-shrink:0}
+  .opts label:has(input:checked){background:#FFF1E0;border-color:var(--accent)}
+  .opts label.ok{border-color:var(--green)!important;background:#E8F6EE!important}
+  .opts label.bad{border-color:var(--red)!important;background:#FDECEC!important}
+  textarea{width:100%;min-height:110px;border:2px solid var(--line);border-radius:12px;padding:12px;font:inherit;resize:vertical}
+  textarea:focus{outline:none;border-color:var(--accent)}
+  .q.correct{border-color:var(--green)}
+  .q.wrong{border-color:var(--red)}
+  .q.missing{border-color:var(--red);box-shadow:0 0 0 3px #FDECEC}
+  .feedback{display:none;margin-top:10px;padding:10px 12px;border-radius:10px;font-size:15px}
+  .feedback.show{display:block}
+  .feedback.good{background:#E8F6EE;color:#1F6B41}
+  .feedback.no{background:#FDECEC;color:#8E2A2A}
+  .feedback.info{background:#EEF3FB;color:#2B4A7A}
+  .actions{text-align:center;margin-top:24px}
+  button{font-family:'Jua',sans-serif;font-size:21px;border:none;border-radius:30px;padding:12px 44px;cursor:pointer;background:var(--accent);color:#fff;box-shadow:0 4px 0 var(--accent-d);transition:transform .1s}
+  button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--accent-d)}
+  button.secondary{background:#fff;color:var(--accent-d);border:2px solid var(--accent);box-shadow:none;margin-left:8px}
+  #msg{color:var(--red);margin-top:10px;min-height:24px}
+  #result{display:none;background:var(--card);border:3px solid var(--accent);border-radius:18px;padding:20px;text-align:center;margin-top:24px}
+  #result h2{font-family:'Jua',sans-serif;margin:0 0 6px;font-size:28px;color:var(--accent-d)}
+  #result .score{font-family:'Jua',sans-serif;font-size:48px;margin:4px 0}
+  .done .opts label{cursor:default}
+  /* puzzle */
+  .puzzle{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px}
+  .p-guide{margin:0 0 6px;font-size:15px;color:var(--muted);text-align:center}
+  #bikeSvg{width:100%;display:block;user-select:none}
+  #bikeSvg text{font-family:'Jua',sans-serif;pointer-events:none}
+  .hub{font-size:12px;fill:#7A6F64}
+  .slot{cursor:pointer;transition:fill .2s}
+  .slot.empty{fill:#F4EFE7;stroke:#BFB2A0;stroke-width:2;stroke-dasharray:6 5}
+  .slot.empty.hl{fill:#FFE7CC}
+  .slot.wrongflash{fill:#FBC9C9!important}
+  .slot-hint{font-size:13px;fill:#9A8D7D}
+  .slot-name{font-size:13px;fill:#2E2A26}
+  .slot-emoji{font-size:20px}
+  .p-status{text-align:center;font-family:'Jua',sans-serif;font-size:20px;margin-top:4px}
+  .p-msg{text-align:center;min-height:52px;margin:6px 0 10px;padding:8px 10px;border-radius:12px;background:#FFF3E0;font-size:16px}
+  .p-msg.good{background:#E8F6EE;color:#1F6B41}
+  .p-msg.no{background:#FDECEC;color:#8E2A2A}
+  .tray{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+  .piece{touch-action:none;cursor:grab;border:3px solid transparent;border-radius:14px;padding:6px 10px 8px;background:#FFFBF4;display:flex;flex-direction:column;align-items:center;min-width:96px;box-shadow:0 2px 0 #E5D9C6;user-select:none;-webkit-user-select:none}
+  .piece svg{width:64px;height:64px}
+  .piece .nm{font-family:'Jua',sans-serif;font-size:14px;text-align:center;line-height:1.2}
+  .piece.sel{border-color:var(--accent);background:#FFF1E0}
+  .piece.used{display:none}
+  .piece.shake{animation:shake .4s}
+  .ghost{position:fixed;pointer-events:none;z-index:99;opacity:.9;transform:translate(-50%,-50%) scale(1.05)}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .rolling #rearWheel,.rolling #frontWheel{transform-box:fill-box;transform-origin:center;animation:spin 1.6s linear infinite}
+  .rolling #bikeAll{animation:bounce .5s ease-in-out infinite alternate}
+  .rolling #road{animation:road .6s linear infinite}
+  @keyframes spin{to{transform:rotate(-360deg)}}
+  @keyframes bounce{to{transform:translateY(-3px)}}
+  @keyframes road{to{stroke-dashoffset:-40}}
+  .wobble #bikeAll{animation:wob .5s}
+  @keyframes wob{25%{transform:rotate(-1.5deg)}75%{transform:rotate(1.5deg)}}
+  .wobble #bikeAll{transform-box:fill-box;transform-origin:center bottom}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🚲 식품구성 자전거 학습지</h1>
+    <p>퍼즐로 자전거를 완성하고, 문제를 푼 뒤 맨 아래 <b>제출하기</b>를 눌러 보세요!</p>
+  </header>
+
+  <div class="section-title"><span>활동</span> 자전거 바퀴 퍼즐</div>
+  <div class="puzzle">
+    <p class="p-guide">조각을 <b>끌어다 놓거나</b>, 조각을 <b>누른 뒤 빈칸을 눌러</b> 바퀴를 채워요.<br>
+      빈칸에 적힌 <b>먹는 양</b>과 <b>칸 모양</b>이 힌트예요. 바퀴가 다 채워지면 자전거가 굴러가요!</p>
+    <svg id="bikeSvg" viewBox="0 0 600 350" aria-label="식품구성 자전거 퍼즐">
+      <line x1="0" y1="335" x2="600" y2="335" stroke="#C9B79C" stroke-width="3"/>
+      <line id="road" x1="0" y1="344" x2="600" y2="344" stroke="#C9B79C" stroke-width="4" stroke-dasharray="22 18"/>
+      <g id="bikeAll">
+        <!-- frame -->
+        <g fill="none" stroke="#E2672B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M120 270 L175 135"/>
+          <path d="M175 135 L305 150 L262 268 Z"/>
+          <path d="M305 150 L440 210 L262 268"/>
+        </g>
+        <path d="M175 135 L160 108 L138 110" fill="none" stroke="#3A3A3A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- rider -->
+        <g stroke-linecap="round" stroke-linejoin="round">
+          <path d="M296 132 L272 196 L262 268" fill="none" stroke="#5B6C8F" stroke-width="20"/>
+          <path d="M300 128 L222 98" fill="none" stroke="#2E2A26" stroke-width="30"/>
+          <path d="M222 100 L160 112" fill="none" stroke="#F4C7A1" stroke-width="11"/>
+          <circle cx="198" cy="66" r="25" fill="#F4C7A1"/>
+          <path d="M172 62 A27 27 0 0 1 224 58 L226 62 Z" fill="#2D9CDB"/>
+          <path d="M176 60 L154 64" stroke="#2D9CDB" stroke-width="7"/>
+          <circle cx="186" cy="70" r="3" fill="#2E2A26"/>
+          <path d="M182 81 Q188 85 194 81" fill="none" stroke="#2E2A26" stroke-width="2"/>
+        </g>
+        <ellipse cx="305" cy="146" rx="22" ry="7" fill="#3A3A3A"/>
+        <circle cx="262" cy="268" r="20" fill="#F2994A" stroke="#D9772A" stroke-width="4"/>
+        <!-- front wheel (water) -->
+        <g id="frontWheel">
+          <circle cx="120" cy="270" r="62" fill="#fff" stroke="#3A3A3A" stroke-width="10"/>
+          <g id="frontSlotG"></g>
+        </g>
+        <!-- rear wheel (food groups) -->
+        <g id="rearWheel">
+          <circle cx="440" cy="210" r="125" fill="#fff"/>
+          <g id="rearSlotsG"></g>
+          <circle cx="440" cy="210" r="125" fill="none" stroke="#3A3A3A" stroke-width="12"/>
+          <circle cx="440" cy="210" r="30" fill="#fff" stroke="#E5D9C6" stroke-width="2"/>
+          <text x="440" y="206" text-anchor="middle" class="hub">식품구성</text>
+          <text x="440" y="222" text-anchor="middle" class="hub">자전거</text>
+        </g>
+      </g>
+    </svg>
+    <div class="p-status"><span id="pCount">0 / 6</span> 조각 완성</div>
+    <div id="pMsg" class="p-msg">조각을 골라 보세요!</div>
+    <div id="tray" class="tray"></div>
+    <div class="actions" style="margin-top:12px"><button type="button" class="secondary" id="pReset" style="margin-left:0">퍼즐 다시 하기</button></div>
+  </div>
+
+  <form id="quiz" novalidate>
+
+    <div class="section-title"><span>1단계</span> 하나만 골라요</div>
+
+    <div class="q" data-type="radio" data-name="q1" data-answer="b"
+         data-exp="곡류는 우리 몸의 에너지를 내는 주식이라 가장 많이 먹어야 해서 칸이 가장 넓어요.">
+      <h3>1. 식품구성 자전거 뒷바퀴에서 가장 넓은 칸을 차지하는 식품군은?</h3>
+      <div class="opts">
+        <label><input type="radio" name="q1" value="a"> 과일류</label>
+        <label><input type="radio" name="q1" value="b"> 곡류</label>
+        <label><input type="radio" name="q1" value="c"> 우유·유제품류</label>
+        <label><input type="radio" name="q1" value="d"> 유지·당류</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="q" data-type="radio" data-name="q2" data-answer="c"
+         data-exp="앞바퀴의 물잔은 물을 충분히 마시는 것이 중요하다는 뜻이에요.">
+      <h3>2. 자전거 앞바퀴에 그려진 물잔은 무엇을 뜻할까요?</h3>
+      <div class="opts">
+        <label><input type="radio" name="q2" value="a"> 음료수를 많이 마시자</label>
+        <label><input type="radio" name="q2" value="b"> 밥을 먹을 때 물을 말아 먹자</label>
+        <label><input type="radio" name="q2" value="c"> 물을 충분히 마시자</label>
+        <label><input type="radio" name="q2" value="d"> 물은 조금만 마시자</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="q" data-type="radio" data-name="q3" data-answer="a"
+         data-exp="자전거를 타는 사람은 골고루 먹는 것과 함께 규칙적인 운동이 필요하다는 뜻이에요.">
+      <h3>3. 자전거를 타고 있는 사람은 무엇을 뜻할까요?</h3>
+      <div class="opts">
+        <label><input type="radio" name="q3" value="a"> 규칙적으로 운동하자</label>
+        <label><input type="radio" name="q3" value="b"> 자전거를 사자</label>
+        <label><input type="radio" name="q3" value="c"> 많이 먹을수록 좋다</label>
+        <label><input type="radio" name="q3" value="d"> 운동보다 잠이 더 중요하다</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="q" data-type="radio" data-name="q4" data-answer="d"
+         data-exp="두부는 콩으로 만들어서 '고기·생선·달걀·콩류'에 속해요.">
+      <h3>4. 두부는 어느 식품군에 속할까요?</h3>
+      <div class="opts">
+        <label><input type="radio" name="q4" value="a"> 곡류</label>
+        <label><input type="radio" name="q4" value="b"> 채소류</label>
+        <label><input type="radio" name="q4" value="c"> 우유·유제품류</label>
+        <label><input type="radio" name="q4" value="d"> 고기·생선·달걀·콩류</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="q" data-type="radio" data-name="q5" data-answer="c"
+         data-exp="우유와 사과는 각각 우유·유제품류, 과일류로 몸에 필요한 영양을 채워 줘요. 탄산음료·사탕·과자는 당과 기름이 많아요.">
+      <h3>5. 🍎 간식 시뮬레이션! 학교 끝나고 배가 고플 때, 가장 좋은 간식은?</h3>
+      <div class="opts">
+        <label><input type="radio" name="q5" value="a"> 탄산음료 + 감자칩</label>
+        <label><input type="radio" name="q5" value="b"> 사탕 한 봉지</label>
+        <label><input type="radio" name="q5" value="c"> 우유 + 사과</label>
+        <label><input type="radio" name="q5" value="d"> 초콜릿 케이크</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="section-title"><span>2단계</span> 알맞은 것을 모두 골라요</div>
+
+    <div class="q" data-type="checkbox" data-name="q6" data-answer="a,c,e"
+         data-exp="시금치, 당근, 오이는 채소류예요. 사과는 과일류, 치즈는 우유·유제품류예요.">
+      <h3>6. 채소류에 속하는 음식을 <u>모두</u> 고르세요.</h3>
+      <div class="hint">정답이 여러 개일 수 있어요.</div>
+      <div class="opts">
+        <label><input type="checkbox" name="q6" value="a"> 🥬 시금치</label>
+        <label><input type="checkbox" name="q6" value="b"> 🍎 사과</label>
+        <label><input type="checkbox" name="q6" value="c"> 🥕 당근</label>
+        <label><input type="checkbox" name="q6" value="d"> 🧀 치즈</label>
+        <label><input type="checkbox" name="q6" value="e"> 🥒 오이</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="q" data-type="checkbox" data-name="q7" data-answer="c,d,e"
+         data-exp="밥(곡류)과 돈가스(고기류)는 있지만 채소류, 과일류, 우유·유제품류가 빠졌어요. 콜라는 유지·당류에 가까워요.">
+      <h3>7. 🚲 찌그러진 바퀴 고치기! 민준이의 점심에서 <u>빠진</u> 식품군을 모두 고르세요.</h3>
+      <div class="menu">🍽️ 민준이의 점심: <b>흰쌀밥, 돈가스, 콜라</b></div>
+      <div class="opts">
+        <label><input type="checkbox" name="q7" value="a"> 곡류</label>
+        <label><input type="checkbox" name="q7" value="b"> 고기·생선·달걀·콩류</label>
+        <label><input type="checkbox" name="q7" value="c"> 채소류</label>
+        <label><input type="checkbox" name="q7" value="d"> 과일류</label>
+        <label><input type="checkbox" name="q7" value="e"> 우유·유제품류</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="q" data-type="checkbox" data-name="q8" data-answer="a,c,d"
+         data-exp="아침밥 먹기, 과자 대신 과일·우유 먹기, 물 마시기가 좋은 조언이에요. 과자를 더 먹거나 점심을 굶는 건 건강에 좋지 않아요.">
+      <h3>8. 💬 상황 카드! 서연이에게 해 줄 알맞은 조언을 모두 고르세요.</h3>
+      <div class="menu">서연이는 아침밥을 거르고, 배가 고프면 과자를 먹어요.</div>
+      <div class="opts">
+        <label><input type="checkbox" name="q8" value="a"> 아침밥을 조금이라도 꼭 먹어 봐.</label>
+        <label><input type="checkbox" name="q8" value="b"> 과자를 더 많이 먹으면 배가 안 고플 거야.</label>
+        <label><input type="checkbox" name="q8" value="c"> 과자 대신 과일이나 우유를 먹어 봐.</label>
+        <label><input type="checkbox" name="q8" value="d"> 목이 마를 땐 음료수 대신 물을 마셔 봐.</label>
+        <label><input type="checkbox" name="q8" value="e"> 아침을 안 먹었으니 점심도 굶자.</label>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="section-title"><span>3단계</span> 생각을 써요</div>
+
+    <div class="q" data-type="text" data-name="q9"
+         data-exp="예시 답안: 기름과 설탕은 조금만 먹어도 에너지가 많고, 많이 먹으면 비만이나 충치 같은 병이 생길 수 있어서 적게 먹어야 하기 때문이에요.">
+      <h3>9. ✏️ 식품구성 자전거에서 '유지·당류' 칸이 가장 작은 이유는 무엇일까요?</h3>
+      <div class="hint">유지(기름)와 당(설탕)이 많은 음식을 떠올리며 내 생각을 써 보세요.</div>
+      <textarea name="q9" placeholder="내 생각을 써 보세요."></textarea>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="actions">
+      <button type="submit" id="submitBtn">제출하기</button>
+      <div id="msg"></div>
+    </div>
+  </form>
+
+  <div id="result">
+    <h2>🎉 수고했어요!</h2>
+    <div class="score" id="score"></div>
+    <p id="comment"></p>
+    <button type="button" class="secondary" id="retryBtn">다시 풀기</button>
+  </div>
+</div>
+
+<script>
+/* ---------- 자전거 퍼즐 ---------- */
+(function(){
+  const NS = 'http://www.w3.org/2000/svg';
+  const RC = {x:440, y:210, r:118};
+  const FC = {x:120, y:270, r:50};
+  const GROUPS = [
+    {id:'meat',  name:['고기·생선·','달걀·콩류'], full:'고기·생선·달걀·콩류', emoji:'🍖🐟🥚', color:'#C9B6E4', a0:0,   a1:60,  hint:['매일','3~4회']},
+    {id:'veg',   name:['채소류'],               full:'채소류',              emoji:'🥦🥕🥬', color:'#CDE5A3', a0:60,  a1:125, hint:['매 끼니','2가지 이상']},
+    {id:'fruit', name:['과일류'],               full:'과일류',              emoji:'🍎🍌🍓', color:'#F7B9B9', a0:125, a1:180, hint:['매일','1~2개']},
+    {id:'milk',  name:['우유·','유제품류'],      full:'우유·유제품류',        emoji:'🥛🧀',   color:'#8FD3DC', a0:180, a1:240, hint:['매일','1~2잔']},
+    {id:'grain', name:['곡류'],                 full:'곡류',                emoji:'🍚🍞🌽', color:'#FCD45A', a0:240, a1:360, hint:['매일','2~4회']}
+  ];
+  const WATER = {id:'water', full:'물', emoji:'💧', color:'#29B6F6', hint:['매일','충분히']};
+  const SUGAR = {id:'sugar', full:'유지·당류', emoji:'🍩🥤', color:'#E0C3A0'};
+
+  const pt = (c,r,a)=>{const t=a*Math.PI/180;return [c.x+r*Math.sin(t), c.y-r*Math.cos(t)];};
+  function wedge(c,r,a0,a1){
+    const [x0,y0]=pt(c,r,a0),[x1,y1]=pt(c,r,a1);
+    return `M${c.x} ${c.y} L${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 ${a1-a0>180?1:0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z`;
+  }
+  function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+  function lines(parent,x,y,arr,cls,lh){
+    const t=el('text',{x,y:y-(arr.length-1)*lh/2,'text-anchor':'middle','dominant-baseline':'middle',class:cls},parent);
+    arr.forEach((s,i)=>{const sp=el('tspan',{x,dy:i?lh:0},t);sp.textContent=s;});
+    return t;
+  }
+
+  const rearG=document.getElementById('rearSlotsG');
+  const frontG=document.getElementById('frontSlotG');
+  const svg=document.getElementById('bikeSvg');
+  const tray=document.getElementById('tray');
+  const msgEl=document.getElementById('pMsg');
+  const countEl=document.getElementById('pCount');
+  const slots={};
+  let placed=0, selected=null;
+
+  function buildSlots(){
+    rearG.innerHTML=''; frontG.innerHTML='';
+    GROUPS.forEach(g=>{
+      const grp=el('g',{},rearG);
+      const p=el('path',{d:wedge(RC,RC.r,g.a0,g.a1),class:'slot empty','data-slot':g.id},grp);
+      const mid=(g.a0+g.a1)/2;
+      const [cx,cy]=pt(RC,RC.r*0.6,mid);
+      const lab=el('g',{},grp);
+      lines(lab,cx,cy,g.hint,'slot-hint',16);
+      slots[g.id]={path:p,label:lab,cx,cy,g};
+    });
+    const fg=el('g',{},frontG);
+    const fp=el('circle',{cx:FC.x,cy:FC.y,r:FC.r,class:'slot empty','data-slot':'water'},fg);
+    const flab=el('g',{},fg);
+    lines(flab,FC.x,FC.y,WATER.hint,'slot-hint',16);
+    slots.water={path:fp,label:flab,cx:FC.x,cy:FC.y,g:WATER};
+  }
+
+  function miniSVG(p){
+    const c={x:32,y:32}, r=28;
+    let inner;
+    if(p.id==='water') inner=`<circle cx="32" cy="32" r="24" fill="${p.color}"/>`;
+    else if(p.id==='sugar') inner=`<path d="${wedge(c,r,-15,15)}" fill="${p.color}"/>`;
+    else inner=`<path d="${wedge(c,r,p.a0,p.a1)}" fill="${p.color}"/>`;
+    return `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="none" stroke="#E5D9C6" stroke-width="2" stroke-dasharray="4 3"/>${inner}</svg>`;
+  }
+
+  function buildTray(){
+    tray.innerHTML='';
+    const all=[...GROUPS,WATER,SUGAR].sort(()=>Math.random()-.5);
+    all.forEach(p=>{
+      const d=document.createElement('div');
+      d.className='piece'; d.dataset.piece=p.id;
+      d.innerHTML=miniSVG(p)+`<div style="font-size:20px">${p.emoji}</div><div class="nm">${p.full}</div>`;
+      attachDrag(d);
+      tray.appendChild(d);
+    });
+  }
+
+  function say(t,cls){msgEl.textContent=t;msgEl.className='p-msg'+(cls?' '+cls:'');}
+
+  function fill(slotId){
+    const s=slots[slotId], g=s.g;
+    s.path.classList.remove('empty');
+    s.path.setAttribute('fill',g.color);
+    s.label.innerHTML='';
+    if(slotId==='water'){
+      lines(s.label,s.cx,s.cy-8,['💧'],'slot-emoji',20);
+      lines(s.label,s.cx,s.cy+18,['물'],'slot-name',14);
+    }else{
+      lines(s.label,s.cx,s.cy-14,[g.emoji],'slot-emoji',20);
+      lines(s.label,s.cx,s.cy+14,g.name,'slot-name',14);
+    }
+    s.done=true;
+  }
+
+  function tryPlace(pieceId,slotId,pieceEl){
+    const s=slots[slotId];
+    if(!s) return;
+    if(s.done){say('이미 채워진 칸이에요. 빈칸을 찾아 보세요!','no');return;}
+    if(pieceId==='sugar'){
+      flashWrong(s); pieceEl.classList.add('shake');
+      setTimeout(()=>pieceEl.classList.remove('shake'),400);
+      say('🍩 유지·당류는 바퀴에 들어갈 자리가 없어요! 기름과 설탕은 조금만 먹어야 해요.','no');
+      return;
+    }
+    if(pieceId!==slotId){
+      flashWrong(s); pieceEl.classList.add('shake');
+      setTimeout(()=>pieceEl.classList.remove('shake'),400);
+      svg.classList.add('wobble'); setTimeout(()=>svg.classList.remove('wobble'),500);
+      say(`앗! 이 칸은 「${s.g.hint.join(' ')}」 먹는 자리예요. 칸 모양과 힌트를 다시 봐요.`,'no');
+      return;
+    }
+    fill(slotId);
+    pieceEl.classList.add('used'); pieceEl.classList.remove('sel'); selected=null;
+    placed++; countEl.textContent=placed+' / 6';
+    if(placed===6){
+      svg.classList.add('rolling');
+      say('🎉 자전거가 씽씽 굴러가요! 골고루 먹고, 물을 충분히 마시고, 운동하면 우리 몸도 건강하게 달려요. (유지·당류는 바퀴에 없어요. 조금만!)','good');
+    }else{
+      say(`⭕ 딩동댕! ${s.g.full} 조각을 끼웠어요. 앞으로 ${6-placed}조각 남았어요.`,'good');
+    }
+  }
+
+  function flashWrong(s){s.path.classList.add('wrongflash');setTimeout(()=>s.path.classList.remove('wrongflash'),500);}
+
+  function slotAt(x,y){
+    const e=document.elementFromPoint(x,y);
+    return e&&e.closest?e.closest('[data-slot]'):null;
+  }
+
+  let hlSlot=null;
+  function setHL(s){if(hlSlot&&hlSlot!==s)hlSlot.classList.remove('hl');hlSlot=s;if(s)s.classList.add('hl');}
+
+  function attachDrag(d){
+    let sx,sy,ghost=null,dragging=false;
+    d.addEventListener('pointerdown',e=>{
+      sx=e.clientX;sy=e.clientY;dragging=false;
+      d.setPointerCapture(e.pointerId);
+    });
+    d.addEventListener('pointermove',e=>{
+      if(sx===undefined) return;
+      if(!dragging && Math.hypot(e.clientX-sx,e.clientY-sy)>6){
+        dragging=true;
+        ghost=d.cloneNode(true);ghost.classList.add('ghost');ghost.classList.remove('sel');
+        document.body.appendChild(ghost);
+      }
+      if(dragging){
+        ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px';
+        const s=slotAt(e.clientX,e.clientY);
+        setHL(s&&s.classList.contains('empty')?s:null);
+      }
+    });
+    const end=e=>{
+      if(sx===undefined) return;
+      if(dragging){
+        ghost.remove();ghost=null;setHL(null);
+        const s=slotAt(e.clientX,e.clientY);
+        if(s) tryPlace(d.dataset.piece,s.dataset.slot,d);
+      }else{
+        const was=d.classList.contains('sel');
+        tray.querySelectorAll('.piece').forEach(p=>p.classList.remove('sel'));
+        if(!was){d.classList.add('sel');selected=d;say('이제 이 조각이 들어갈 빈칸을 눌러 보세요!');}
+        else selected=null;
+      }
+      sx=undefined;dragging=false;
+    };
+    d.addEventListener('pointerup',end);
+    d.addEventListener('pointercancel',()=>{if(ghost){ghost.remove();ghost=null;}setHL(null);sx=undefined;dragging=false;});
+  }
+
+  svg.addEventListener('click',e=>{
+    const s=e.target.closest&&e.target.closest('[data-slot]');
+    if(!s) return;
+    if(!selected){ if(slots[s.dataset.slot].done) return; say('먼저 아래에서 조각을 하나 눌러 고르세요!'); return; }
+    tryPlace(selected.dataset.piece,s.dataset.slot,selected);
+  });
+
+  function reset(){
+    placed=0;selected=null;countEl.textContent='0 / 6';
+    svg.classList.remove('rolling');
+    buildSlots();buildTray();say('조각을 골라 보세요!');
+  }
+  document.getElementById('pReset').addEventListener('click',reset);
+  reset();
+})();
+
+/* ---------- 문제 채점 ---------- */
+(function(){
+  const form = document.getElementById('quiz');
+  const msg = document.getElementById('msg');
+  const result = document.getElementById('result');
+  const qs = Array.from(document.querySelectorAll('.q'));
+
+  function getValues(q){
+    const name = q.dataset.name;
+    if(q.dataset.type === 'text') return form.elements[name].value.trim();
+    return Array.from(form.querySelectorAll('input[name="'+name+'"]:checked')).map(i=>i.value).sort();
+  }
+
+  form.addEventListener('change', e=>{
+    const q = e.target.closest('.q'); if(q) q.classList.remove('missing');
+  });
+  form.addEventListener('input', e=>{
+    const q = e.target.closest('.q'); if(q) q.classList.remove('missing');
+  });
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(form.classList.contains('done')) return;
+
+    // check all answered
+    let firstMissing = null;
+    qs.forEach(q=>{
+      const v = getValues(q);
+      const empty = Array.isArray(v) ? v.length === 0 : v.length === 0;
+      q.classList.toggle('missing', empty);
+      if(empty && !firstMissing) firstMissing = q;
+    });
+    if(firstMissing){
+      msg.textContent = '아직 풀지 않은 문제가 있어요! 빨간 테두리 문제를 확인해 주세요.';
+      firstMissing.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+    msg.textContent = '';
+
+    let correct = 0, total = 0;
+    qs.forEach(q=>{
+      const fb = q.querySelector('.feedback');
+      const v = getValues(q);
+      if(q.dataset.type === 'text'){
+        fb.className = 'feedback show info';
+        fb.innerHTML = '👍 생각을 잘 써 주었어요!<br>' + q.dataset.exp;
+        return;
+      }
+      total++;
+      const ans = q.dataset.answer.split(',').sort();
+      const isOk = ans.length === v.length && ans.every((a,i)=>a===v[i]);
+      if(isOk) correct++;
+      q.classList.add(isOk ? 'correct' : 'wrong');
+      q.querySelectorAll('input').forEach(inp=>{
+        const lab = inp.closest('label');
+        if(ans.includes(inp.value)) lab.classList.add('ok');
+        else if(inp.checked) lab.classList.add('bad');
+        inp.disabled = true;
+      });
+      fb.className = 'feedback show ' + (isOk ? 'good' : 'no');
+      fb.innerHTML = (isOk ? '⭕ 정답이에요! ' : '❌ 아쉬워요. 초록색이 정답이에요. ') + q.dataset.exp;
+    });
+    form.elements['q9'].readOnly = true;
+    form.classList.add('done');
+    document.getElementById('submitBtn').style.display = 'none';
+
+    document.getElementById('score').textContent = correct + ' / ' + total;
+    let c;
+    if(correct === total) c = '완벽해요! 내 몸의 자전거가 씽씽 달려요 🚲💨';
+    else if(correct >= total - 2) c = '아주 잘했어요! 틀린 문제의 설명을 한 번 더 읽어 보세요.';
+    else c = '괜찮아요! 설명을 읽고 다시 풀어 보면 더 잘할 수 있어요.';
+    document.getElementById('comment').textContent = c;
+    result.style.display = 'block';
+    result.scrollIntoView({behavior:'smooth', block:'center'});
+  });
+
+  document.getElementById('retryBtn').addEventListener('click', function(){
+    form.reset();
+    form.classList.remove('done');
+    form.elements['q9'].readOnly = false;
+    qs.forEach(q=>{
+      q.classList.remove('correct','wrong','missing');
+      q.querySelector('.feedback').className = 'feedback';
+      q.querySelectorAll('label').forEach(l=>l.classList.remove('ok','bad'));
+      q.querySelectorAll('input').forEach(i=>i.disabled=false);
+    });
+    document.getElementById('submitBtn').style.display = '';
+    result.style.display = 'none';
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+})();
+</script>
+</body>
+</html>
